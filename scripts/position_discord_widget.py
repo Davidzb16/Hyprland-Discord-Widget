@@ -98,6 +98,11 @@ def main():
 
         run_hyprctl(["dispatch", "movetoworkspacesilent", f"special:discord_widget,address:{addr}"])
     else:
+        # Close any currently active Quickshell widget first
+        shell_qml = os.path.expanduser("~/.config/hypr/scripts/quickshell/Shell.qml")
+        if os.path.exists(shell_qml):
+            subprocess.run(["quickshell", "-p", shell_qml, "ipc", "call", "main", "handleCommand", "close", "", ""], capture_output=True)
+
         # Lock monitor name for this widget session
         with open(mon_file, "w") as f:
             f.write(mon_name)
