@@ -80,6 +80,7 @@ def main():
     os.makedirs(run_dir, exist_ok=True)
     widget_file = os.path.join(run_dir, "current_widget")
     mon_file = os.path.join(run_dir, "discord_monitor")
+    shell_qml = os.path.expanduser("~/.config/hypr/scripts/quickshell/Shell.qml")
 
     # Check if currently visible on active workspace
     is_visible_current = (win_ws_name != "special:discord_widget") and (not discord_win.get("hidden", False)) and (win_ws_id == curr_ws_id or is_pinned)
@@ -95,7 +96,8 @@ def main():
         
         with open(widget_file, "w") as f:
             f.write("")
-            
+
+        subprocess.run(["quickshell", "-p", shell_qml, "ipc", "call", "main", "handleCommand", "close", "", ""], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         run_hyprctl(["dispatch", "movetoworkspacesilent", f"special:discord_widget,address:{addr}"])
     else:
         # Lock monitor name for this widget session
@@ -106,9 +108,8 @@ def main():
         with open(widget_file, "w") as f:
             f.write("discord")
 
-        # Close any open Quickshell popups
-        shell_qml = os.path.expanduser("~/.config/hypr/scripts/quickshell/Shell.qml")
-        subprocess.run(["quickshell", "-p", shell_qml, "ipc", "call", "main", "handleCommand", "close", "", ""], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        # Open Quickshell overlay mask to capture outside mouse clicks
+        subprocess.run(["quickshell", "-p", shell_qml, "ipc", "call", "main", "handleCommand", "open", "discord", ""], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         time.sleep(0.05)
 
         # Un-fullscreen if needed

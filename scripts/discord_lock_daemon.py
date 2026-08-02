@@ -32,11 +32,10 @@ def main():
     OTHER_WIDGETS = [
         "network", "battery", "volume", "calendar", "settings",
         "applauncher", "clipboard", "music", "focustime", "stewart",
-        "updater", "guide", "movies", "wallpaper"
+        "updater", "guide", "movies", "wallpaper", "hidden", ""
     ]
 
     was_maximized = False
-    open_time = 0
 
     while True:
         try:
@@ -62,40 +61,14 @@ def main():
 
                 is_visible = (win_ws_name != "special:discord_widget") and (not is_hidden)
 
-                # Reset open_time if Discord is hidden
-                if not is_visible or status != "discord":
-                    open_time = 0
-
-                # Only auto-close Discord if another active Quickshell widget is explicitly open
+                # If Quickshell registered a click outside or closed widget (status != "discord")
                 if status in OTHER_WIDGETS and is_visible:
                     if is_pinned:
                         run_hyprctl(["dispatch", "pin", f"address:{addr}"])
                     run_hyprctl(["dispatch", "movetoworkspacesilent", f"special:discord_widget,address:{addr}"])
                     was_maximized = False
-                    open_time = 0
 
                 elif status == "discord" and is_visible:
-                    if open_time == 0:
-                        open_time = time.time()
-
-                    # Auto-hide if user clicks outside Discord window (focus loss)
-                    if time.time() - open_time > 0.35:
-                        active_win = get_json(["activewindow", "-j"])
-                        active_addr = active_win.get("address", "") if isinstance(active_win, dict) else ""
-                        active_pid = active_win.get("pid") if isinstance(active_win, dict) else None
-                        discord_pid = discord_win.get("pid")
-
-                        if active_addr != addr and active_pid != discord_pid:
-                            if is_pinned:
-                                run_hyprctl(["dispatch", "pin", f"address:{addr}"])
-                            run_hyprctl(["dispatch", "movetoworkspacesilent", f"special:discord_widget,address:{addr}"])
-                            with open(widget_file, "w") as f:
-                                f.write("")
-                            was_maximized = False
-                            open_time = 0
-                            time.sleep(0.05)
-                            continue
-
                     # Anchor Discord strictly to the monitor where the widget was opened
                     monitors = get_json(["monitors", "-j"])
                     target_mon_name = ""
