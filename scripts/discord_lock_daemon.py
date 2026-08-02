@@ -15,11 +15,11 @@ def run_hyprctl(cmd):
 def get_json(cmd):
     out = run_hyprctl(cmd)
     if not out:
-        return []
+        return {} if "activewindow" in cmd else []
     try:
         return json.loads(out)
     except Exception:
-        return []
+        return {} if "activewindow" in cmd else []
 
 def main():
     run_dir = os.path.expanduser("~/.local/state/quickshell")
@@ -36,6 +36,7 @@ def main():
     ]
 
     was_maximized = False
+    open_time = 0
 
     while True:
         try:
@@ -47,10 +48,11 @@ def main():
 
             clients = get_json(["clients", "-j"])
             discord_win = None
-            for c in clients:
-                if c.get("class", "").lower() in ["discord", "com.discordapp.discord", "vesktop"]:
-                    discord_win = c
-                    break
+            if isinstance(clients, list):
+                for c in clients:
+                    if c.get("class", "").lower() in ["discord", "com.discordapp.discord", "vesktop"]:
+                        discord_win = c
+                        break
 
             if discord_win:
                 addr = discord_win.get("address")
@@ -60,14 +62,40 @@ def main():
 
                 is_visible = (win_ws_name != "special:discord_widget") and (not is_hidden)
 
+                # Reset open_time if Discord is hidden
+                if not is_visible or status != "discord":
+                    open_time = 0
+
                 # Only auto-close Discord if another active Quickshell widget is explicitly open
                 if status in OTHER_WIDGETS and is_visible:
                     if is_pinned:
                         run_hyprctl(["dispatch", "pin", f"address:{addr}"])
                     run_hyprctl(["dispatch", "movetoworkspacesilent", f"special:discord_widget,address:{addr}"])
                     was_maximized = False
+                    open_time = 0
 
                 elif status == "discord" and is_visible:
+                    if open_time == 0:
+                        open_time = time.time()
+
+                    # Auto-hide if user clicks outside Discord window (focus loss)
+                    if time.time() - open_time > 0.35:
+                        active_win = get_json(["activewindow", "-j"])
+                        active_addr = active_win.get("address", "") if isinstance(active_win, dict) else ""
+                        active_pid = active_win.get("pid") if isinstance(active_win, dict) else None
+                        discord_pid = discord_win.get("pid")
+
+                        if active_addr != addr and active_pid != discord_pid:
+                            if is_pinned:
+                                run_hyprctl(["dispatch", "pin", f"address:{addr}"])
+                            run_hyprctl(["dispatch", "movetoworkspacesilent", f"special:discord_widget,address:{addr}"])
+                            with open(widget_file, "w") as f:
+                                f.write("")
+                            was_maximized = False
+                            open_time = 0
+                            time.sleep(0.05)
+                            continue
+
                     # Anchor Discord strictly to the monitor where the widget was opened
                     monitors = get_json(["monitors", "-j"])
                     target_mon_name = ""
@@ -76,19 +104,22 @@ def main():
                             target_mon_name = f.read().strip()
 
                     target_mon = None
-                    if target_mon_name:
+                    if target_mon_name and isinstance(monitors, list):
                         for m in monitors:
                             if m.get("name") == target_mon_name:
                                 target_mon = m
                                 break
 
-                    if not target_mon:
+                    if not target_mon and isinstance(monitors, list):
                         for m in monitors:
                             if m.get("focused"):
                                 target_mon = m
                                 break
-                    if not target_mon and monitors:
+                    if not target_mon and isinstance(monitors, list) and monitors:
                         target_mon = monitors[0]
+
+                    if not target_mon:
+                        target_mon = {}
 
                     mon_x = target_mon.get("x", 0)
                     mon_y = target_mon.get("y", 0)
@@ -111,16 +142,17 @@ def main():
                         time.sleep(0.05)
                         continue
 
-                    # If window was just un-maximized (or restored via Discord controls), restore default widget size first
+                    # If window was just un-maximized, restore default widget size first
                     if was_maximized:
                         was_maximized = False
                         run_hyprctl(["dispatch", "resizewindowpixel", f"exact 480 680,address:{addr}"])
                         time.sleep(0.05)
                         clients = get_json(["clients", "-j"])
-                        for c in clients:
-                            if c.get("address") == addr:
-                                discord_win = c
-                                break
+                        if isinstance(clients, list):
+                            for c in clients:
+                                if c.get("address") == addr:
+                                    discord_win = c
+                                    break
 
                     actual_w = discord_win.get("size", [480, 680])[0]
                     margin = 16
