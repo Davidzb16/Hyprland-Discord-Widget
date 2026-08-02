@@ -37,7 +37,11 @@ cp "$SRC_DIR/systemd/discord-lock.service" "$SYSTEMD_USER/"
 
 chmod +x "$HYPR_SCRIPTS/position_discord_widget.py"
 chmod +x "$HYPR_SCRIPTS/discord_lock_daemon.py"
-chmod +x "$HYPR_SCRIPTS/discord_voice.py"
+# Configure Quickshell WindowRegistry.js to not spawn custom DiscordPopup.qml
+WIN_REG="$HOME/.config/hypr/scripts/quickshell/WindowRegistry.js"
+if [ -f "$WIN_REG" ]; then
+    sed -i 's|"discord/DiscordPopup.qml"|""|g' "$WIN_REG"
+fi
 
 echo -e "${BLUE}⚙️ Configurando el servicio de bloqueo systemd...${RESET}"
 systemctl --user daemon-reload
