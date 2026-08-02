@@ -63,6 +63,12 @@ def main():
                     run_hyprctl(["dispatch", "movetoworkspacesilent", f"special:discord_widget,address:{addr}"])
 
                 elif status == "discord" and is_visible:
+                    # If window is currently maximized / fullscreen, allow it without snapping
+                    is_fullscreen = (discord_win.get("fullscreen", 0) != 0) or (discord_win.get("fullscreenClient", 0) != 0)
+                    if is_fullscreen:
+                        time.sleep(0.05)
+                        continue
+
                     # Anchor Discord strictly to the monitor where the widget was opened
                     monitors = get_json(["monitors", "-j"])
                     target_mon_name = ""
@@ -91,18 +97,28 @@ def main():
                     mon_scale = target_mon.get("scale", 1.0)
                     logical_w = int(mon_w / mon_scale)
 
-                    actual_w = discord_win.get("size", [480, 680])[0]
+                    target_w = 480
+                    target_h = 680
                     margin = 16
-                    target_x = int(mon_x + logical_w - actual_w - margin)
+                    target_x = int(mon_x + logical_w - target_w - margin)
                     if target_x < mon_x:
                         target_x = mon_x
                     target_y = int(mon_y + round(60 * mon_scale))
 
                     curr_at = discord_win.get("at", [0, 0])
-                    
-                    # Snap back if user dragged window or pointer moved across screens
-                    if abs(curr_at[0] - target_x) > 2 or abs(curr_at[1] - target_y) > 2:
-                        run_hyprctl(["dispatch", "movewindowpixel", f"exact {target_x} {target_y},address:{addr}"])
+                    curr_size = discord_win.get("size", [target_w, target_h])
+
+                    needs_move = abs(curr_at[0] - target_x) > 2 or abs(curr_at[1] - target_y) > 2
+                    needs_resize = abs(curr_size[0] - target_w) > 2 or abs(curr_size[1] - target_h) > 2
+
+                    # Snap back position and size if user unmaximized or dragged window
+                    if needs_move or needs_resize:
+                        batch_cmds = []
+                        if needs_resize:
+                            batch_cmds.append(f"dispatch resizewindowpixel exact {target_w} {target_h},address:{addr}")
+                        if needs_move:
+                            batch_cmds.append(f"dispatch movewindowpixel exact {target_x} {target_y},address:{addr}")
+                        run_hyprctl(["--batch", ";".join(batch_cmds)])
 
             time.sleep(0.05)
         except Exception:
