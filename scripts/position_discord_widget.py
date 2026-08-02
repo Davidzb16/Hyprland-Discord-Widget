@@ -84,15 +84,12 @@ def main():
     # Check if currently visible on active workspace
     is_visible_current = (win_ws_name != "special:discord_widget") and (not discord_win.get("hidden", False)) and (win_ws_id == curr_ws_id or is_pinned)
 
-    actual_w = discord_win.get("size", [480, 680])[0]
-    margin = 16
-    pos_x = int(mon_x + logical_w - actual_w - margin)
-    if pos_x < mon_x:
-        pos_x = mon_x
-    pos_y = int(mon_y + round(60 * mon_scale))
-
     if is_visible_current:
-        # Hide Discord cleanly in 1 single step
+        # Hide Discord cleanly
+        if (discord_win.get("fullscreen", 0) != 0) or (discord_win.get("fullscreenClient", 0) != 0):
+            run_hyprctl(["dispatch", "focuswindow", f"address:{addr}"])
+            run_hyprctl(["dispatch", "fullscreen", "0"])
+
         if is_pinned:
             run_hyprctl(["dispatch", "pin", f"address:{addr}"])
         
@@ -115,7 +112,7 @@ def main():
         time.sleep(0.05)
 
         # Un-fullscreen if needed
-        if discord_win.get("fullscreen", 0) != 0:
+        if (discord_win.get("fullscreen", 0) != 0) or (discord_win.get("fullscreenClient", 0) != 0):
             run_hyprctl(["dispatch", "focuswindow", f"address:{addr}"])
             run_hyprctl(["dispatch", "fullscreen", "0"])
 
@@ -134,9 +131,11 @@ def main():
                 actual_w = c.get("size", [target_w, target_h])[0]
                 break
 
+        margin = 16
         pos_x = int(mon_x + logical_w - actual_w - margin)
         if pos_x < mon_x:
             pos_x = mon_x
+        pos_y = int(mon_y + round(60 * mon_scale))
 
         # 3) Animate sliding down from top bar into widget position
         batch_cmds = [

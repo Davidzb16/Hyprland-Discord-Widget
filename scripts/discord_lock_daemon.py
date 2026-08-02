@@ -22,7 +22,9 @@ def get_json(cmd):
         return []
 
 def main():
-    run_dir = "/run/user/1000/quickshell"
+    run_dir = os.path.expanduser("~/.local/state/quickshell")
+    if "XDG_RUNTIME_DIR" in os.environ:
+        run_dir = os.path.join(os.environ["XDG_RUNTIME_DIR"], "quickshell")
     os.makedirs(run_dir, exist_ok=True)
     widget_file = os.path.join(run_dir, "current_widget")
     mon_file = os.path.join(run_dir, "discord_monitor")
@@ -32,6 +34,8 @@ def main():
         "applauncher", "clipboard", "music", "focustime", "stewart",
         "updater", "guide", "movies", "wallpaper"
     ]
+
+    was_fullscreen = False
 
     while True:
         try:
@@ -61,13 +65,26 @@ def main():
                     if is_pinned:
                         run_hyprctl(["dispatch", "pin", f"address:{addr}"])
                     run_hyprctl(["dispatch", "movetoworkspacesilent", f"special:discord_widget,address:{addr}"])
+                    was_fullscreen = False
 
                 elif status == "discord" and is_visible:
-                    # If window is currently maximized / fullscreen, allow it without snapping
                     is_fullscreen = (discord_win.get("fullscreen", 0) != 0) or (discord_win.get("fullscreenClient", 0) != 0)
+
                     if is_fullscreen:
+                        was_fullscreen = True
                         time.sleep(0.05)
                         continue
+
+                    # If window was just un-maximized, restore default widget size first
+                    if was_fullscreen:
+                        was_fullscreen = False
+                        run_hyprctl(["dispatch", "resizewindowpixel", f"exact 480 680,address:{addr}"])
+                        time.sleep(0.05)
+                        clients = get_json(["clients", "-j"])
+                        for c in clients:
+                            if c.get("address") == addr:
+                                discord_win = c
+                                break
 
                     # Anchor Discord strictly to the monitor where the widget was opened
                     monitors = get_json(["monitors", "-j"])
@@ -97,28 +114,18 @@ def main():
                     mon_scale = target_mon.get("scale", 1.0)
                     logical_w = int(mon_w / mon_scale)
 
-                    target_w = 480
-                    target_h = 680
+                    actual_w = discord_win.get("size", [480, 680])[0]
                     margin = 16
-                    target_x = int(mon_x + logical_w - target_w - margin)
+                    target_x = int(mon_x + logical_w - actual_w - margin)
                     if target_x < mon_x:
                         target_x = mon_x
                     target_y = int(mon_y + round(60 * mon_scale))
 
                     curr_at = discord_win.get("at", [0, 0])
-                    curr_size = discord_win.get("size", [target_w, target_h])
 
-                    needs_move = abs(curr_at[0] - target_x) > 2 or abs(curr_at[1] - target_y) > 2
-                    needs_resize = abs(curr_size[0] - target_w) > 2 or abs(curr_size[1] - target_h) > 2
-
-                    # Snap back position and size if user unmaximized or dragged window
-                    if needs_move or needs_resize:
-                        batch_cmds = []
-                        if needs_resize:
-                            batch_cmds.append(f"dispatch resizewindowpixel exact {target_w} {target_h},address:{addr}")
-                        if needs_move:
-                            batch_cmds.append(f"dispatch movewindowpixel exact {target_x} {target_y},address:{addr}")
-                        run_hyprctl(["--batch", ";".join(batch_cmds)])
+                    # Snap back if user dragged window or pointer moved across screens
+                    if abs(curr_at[0] - target_x) > 2 or abs(curr_at[1] - target_y) > 2:
+                        run_hyprctl(["dispatch", "movewindowpixel", f"exact {target_x} {target_y},address:{addr}"])
 
             time.sleep(0.05)
         except Exception:
