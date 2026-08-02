@@ -37,7 +37,64 @@ echo -e "${BLUE}📂 Eliminando archivos instalados en ~/.config/hypr/...${RESET
 [ -f "$HYPR_SCRIPTS/discord_voice.py" ] && rm -f "$HYPR_SCRIPTS/discord_voice.py"
 [ -d "$QUICKSHELL_DIR" ] && rm -rf "$QUICKSHELL_DIR"
 
-# 3. Remover la regla de ventana de Hyprland si existe
+# 3. Remover icono de Discord de TopBar.qml si existe
+TOPBAR_QML="$HOME/.config/hypr/scripts/quickshell/TopBar.qml"
+if [ -f "$TOPBAR_QML" ]; then
+    echo -e "${BLUE}📊 Eliminando el icono de Discord de la barra superior ($TOPBAR_QML)...${RESET}"
+    python3 -c "
+import os
+
+topbar_file = '$TOPBAR_QML'
+try:
+    with open(topbar_file, 'r', encoding='utf-8') as f:
+        content = f.read()
+
+    changed = False
+    while 'discordPill' in content:
+        comment_marker = '// --- Discord QuickVoice Pill ---'
+        idx = content.find('id: discordPill')
+        if idx == -1:
+            break
+        rect_start = content.rfind('Rectangle', 0, idx)
+        if rect_start == -1:
+            break
+        comment_start = content.rfind(comment_marker, 0, rect_start)
+        start_pos = comment_start if comment_start != -1 and content[comment_start:rect_start].strip() == comment_marker else rect_start
+
+        open_brace = content.find('{', rect_start)
+        if open_brace == -1:
+            break
+        depth = 1
+        curr = open_brace + 1
+        while curr < len(content) and depth > 0:
+            if content[curr] == '{':
+                depth += 1
+            elif content[curr] == '}':
+                depth -= 1
+            curr += 1
+        end_pos = curr
+
+        while end_pos < len(content) and content[end_pos] in '\r\n':
+            end_pos += 1
+        while start_pos > 0 and content[start_pos-1] in ' \t':
+            start_pos -= 1
+        if start_pos > 0 and content[start_pos-1] == '\n':
+            start_pos -= 1
+        if start_pos > 0 and content[start_pos-1] == '\r':
+            start_pos -= 1
+
+        content = content[:start_pos] + '\n' + content[end_pos:]
+        changed = True
+
+    if changed:
+        with open(topbar_file, 'w', encoding='utf-8') as f:
+            f.write(content)
+except Exception as e:
+    print(f'Error al modificar TopBar.qml: {e}')
+" 2>/dev/null || true
+fi
+
+# 4. Remover la regla de ventana de Hyprland si existe
 RULES_CONF="$HOME/.config/hypr/config/rules.conf"
 [ ! -f "$RULES_CONF" ] && RULES_CONF="$HOME/.config/hypr/hyprland.conf"
 
@@ -63,4 +120,15 @@ except Exception as e:
     hyprctl reload >/dev/null 2>&1 || true
 fi
 
+# 5. Reiniciar quickshell si está corriendo para reflejar cambios en la barra
+if pgrep -f "quickshell.*Shell.qml" >/dev/null; then
+    echo -e "${BLUE}🔄 Reiniciando Quickshell para aplicar los cambios en la barra...${RESET}"
+    pkill -f "quickshell.*Shell.qml" || true
+    sleep 0.5
+    quickshell -p "$HOME/.config/hypr/scripts/quickshell/Shell.qml" >/dev/null 2>&1 &
+    disown
+fi
+
 echo -e "\n${GREEN}✨ ¡Desinstalación completada con éxito!${RESET}\n"
+
+
