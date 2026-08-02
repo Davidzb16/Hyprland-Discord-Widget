@@ -47,5 +47,22 @@ curl -fsSL https://raw.githubusercontent.com/Davidzb16/Hyprland-Discord-Widget/m
 
 ---
 
+## 🗑️ Uninstallation
+
+If you ever wish to remove the widget and restore your configuration:
+
+```bash
+./uninstall.sh
+```
+
+Or run directly via curl:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Davidzb16/Hyprland-Discord-Widget/main/uninstall.sh | bash
+```
+
+---
+
 ## 📜 License
 MIT License. Feel free to modify and elevate your Hyprland Rice! 🎨
+
