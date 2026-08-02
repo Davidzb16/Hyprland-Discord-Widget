@@ -1,0 +1,12 @@
+[Unit]
+Description=Discord Widget Position Lock Daemon
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /home/zetagames/.config/hypr/scripts/discord_lock_daemon.py
+Restart=always
+RestartSec=1
+
+[Install]
+WantedBy=default.target
