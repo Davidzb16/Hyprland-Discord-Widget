@@ -25,6 +25,7 @@ def main():
     run_dir = "/run/user/1000/quickshell"
     os.makedirs(run_dir, exist_ok=True)
     widget_file = os.path.join(run_dir, "current_widget")
+    mon_file = os.path.join(run_dir, "discord_monitor")
 
     OTHER_WIDGETS = [
         "network", "battery", "volume", "calendar", "settings",
@@ -62,20 +63,32 @@ def main():
                     run_hyprctl(["dispatch", "movetoworkspacesilent", f"special:discord_widget,address:{addr}"])
 
                 elif status == "discord" and is_visible:
-                    # Maintain exact locked position
+                    # Anchor Discord strictly to the monitor where the widget was opened
                     monitors = get_json(["monitors", "-j"])
-                    focused_mon = None
-                    for m in monitors:
-                        if m.get("focused"):
-                            focused_mon = m
-                            break
-                    if not focused_mon and monitors:
-                        focused_mon = monitors[0]
+                    target_mon_name = ""
+                    if os.path.exists(mon_file):
+                        with open(mon_file, "r") as f:
+                            target_mon_name = f.read().strip()
 
-                    mon_x = focused_mon.get("x", 0)
-                    mon_y = focused_mon.get("y", 0)
-                    mon_w = focused_mon.get("width", 1920)
-                    mon_scale = focused_mon.get("scale", 1.0)
+                    target_mon = None
+                    if target_mon_name:
+                        for m in monitors:
+                            if m.get("name") == target_mon_name:
+                                target_mon = m
+                                break
+
+                    if not target_mon:
+                        for m in monitors:
+                            if m.get("focused"):
+                                target_mon = m
+                                break
+                    if not target_mon and monitors:
+                        target_mon = monitors[0]
+
+                    mon_x = target_mon.get("x", 0)
+                    mon_y = target_mon.get("y", 0)
+                    mon_w = target_mon.get("width", 1920)
+                    mon_scale = target_mon.get("scale", 1.0)
                     logical_w = int(mon_w / mon_scale)
 
                     actual_w = discord_win.get("size", [480, 680])[0]
@@ -87,7 +100,7 @@ def main():
 
                     curr_at = discord_win.get("at", [0, 0])
                     
-                    # Snap back if user dragged window
+                    # Snap back if user dragged window or pointer moved across screens
                     if abs(curr_at[0] - target_x) > 2 or abs(curr_at[1] - target_y) > 2:
                         run_hyprctl(["dispatch", "movewindowpixel", f"exact {target_x} {target_y},address:{addr}"])
 

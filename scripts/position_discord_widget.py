@@ -65,6 +65,7 @@ def main():
     mon_y = focused_mon.get("y", 0)
     mon_w = focused_mon.get("width", 1920)
     mon_scale = focused_mon.get("scale", 1.0)
+    mon_name = focused_mon.get("name", "")
 
     logical_w = int(mon_w / mon_scale)
 
@@ -78,6 +79,7 @@ def main():
         run_dir = os.path.join(os.environ["XDG_RUNTIME_DIR"], "quickshell")
     os.makedirs(run_dir, exist_ok=True)
     widget_file = os.path.join(run_dir, "current_widget")
+    mon_file = os.path.join(run_dir, "discord_monitor")
 
     # Check if currently visible on active workspace
     is_visible_current = (win_ws_name != "special:discord_widget") and (not discord_win.get("hidden", False)) and (win_ws_id == curr_ws_id or is_pinned)
@@ -90,7 +92,7 @@ def main():
     pos_y = int(mon_y + round(60 * mon_scale))
 
     if is_visible_current:
-        # Hide Discord cleanly in 1 single step (Hyprland handles slide top animation)
+        # Hide Discord cleanly in 1 single step
         if is_pinned:
             run_hyprctl(["dispatch", "pin", f"address:{addr}"])
         
@@ -99,11 +101,15 @@ def main():
             
         run_hyprctl(["dispatch", "movetoworkspacesilent", f"special:discord_widget,address:{addr}"])
     else:
+        # Lock monitor name for this widget session
+        with open(mon_file, "w") as f:
+            f.write(mon_name)
+
         # Mark current_widget as "discord"
         with open(widget_file, "w") as f:
             f.write("discord")
 
-        # Close any open Quickshell popups (network, volume, battery, etc.)
+        # Close any open Quickshell popups
         shell_qml = os.path.expanduser("~/.config/hypr/scripts/quickshell/Shell.qml")
         subprocess.run(["quickshell", "-p", shell_qml, "ipc", "call", "main", "handleCommand", "close", "", ""], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         time.sleep(0.05)
