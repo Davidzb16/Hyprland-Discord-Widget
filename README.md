@@ -1,6 +1,6 @@
 # 🎮 Hyprland Discord Widget
 
-An elegant, smart, and interactive **Discord** widget designed for **Hyprland** and **Quickshell**. It transforms the official Discord application into a floating pop-up widget that seamlessly appears right below the top bar at the press of a button.
+An interactive **Discord** widget designed for **Hyprland** and **Quickshell**. It transforms the official Discord application into a floating pop-up widget that seamlessly appears right below the top bar at the press of a button.
 
 ---
 
