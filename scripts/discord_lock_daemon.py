@@ -29,12 +29,6 @@ def main():
     widget_file = os.path.join(run_dir, "current_widget")
     mon_file = os.path.join(run_dir, "discord_monitor")
 
-    OTHER_WIDGETS = [
-        "network", "battery", "volume", "calendar", "settings",
-        "applauncher", "clipboard", "music", "focustime", "stewart",
-        "updater", "guide", "movies", "wallpaper", "hidden", ""
-    ]
-
     was_maximized = False
 
     while True:
@@ -61,8 +55,8 @@ def main():
 
                 is_visible = (win_ws_name != "special:discord_widget") and (not is_hidden)
 
-                # If Quickshell registered a click outside or closed widget (status != "discord")
-                if status in OTHER_WIDGETS and is_visible:
+                # If Quickshell registered a click outside or another widget opened (status != "discord")
+                if status != "discord" and is_visible:
                     if is_pinned:
                         run_hyprctl(["dispatch", "pin", f"address:{addr}"])
                     run_hyprctl(["dispatch", "movetoworkspacesilent", f"special:discord_widget,address:{addr}"])
