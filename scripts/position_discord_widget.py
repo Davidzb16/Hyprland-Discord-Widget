@@ -102,7 +102,7 @@ def main():
         shell_qml = os.path.expanduser("~/.config/hypr/scripts/quickshell/Shell.qml")
         if os.path.exists(shell_qml):
             subprocess.run(["quickshell", "-p", shell_qml, "ipc", "call", "main", "handleCommand", "close", "", ""], capture_output=True)
-            time.sleep(0.1)
+            time.sleep(0.25)
 
         # Lock monitor name for this widget session
         with open(mon_file, "w") as f:
