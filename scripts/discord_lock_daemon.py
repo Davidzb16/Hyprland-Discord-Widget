@@ -35,7 +35,7 @@ def main():
         "updater", "guide", "movies", "wallpaper"
     ]
 
-    was_fullscreen = False
+    was_maximized = False
 
     while True:
         try:
@@ -65,27 +65,9 @@ def main():
                     if is_pinned:
                         run_hyprctl(["dispatch", "pin", f"address:{addr}"])
                     run_hyprctl(["dispatch", "movetoworkspacesilent", f"special:discord_widget,address:{addr}"])
-                    was_fullscreen = False
+                    was_maximized = False
 
                 elif status == "discord" and is_visible:
-                    is_fullscreen = (discord_win.get("fullscreen", 0) != 0) or (discord_win.get("fullscreenClient", 0) != 0)
-
-                    if is_fullscreen:
-                        was_fullscreen = True
-                        time.sleep(0.05)
-                        continue
-
-                    # If window was just un-maximized, restore default widget size first
-                    if was_fullscreen:
-                        was_fullscreen = False
-                        run_hyprctl(["dispatch", "resizewindowpixel", f"exact 480 680,address:{addr}"])
-                        time.sleep(0.05)
-                        clients = get_json(["clients", "-j"])
-                        for c in clients:
-                            if c.get("address") == addr:
-                                discord_win = c
-                                break
-
                     # Anchor Discord strictly to the monitor where the widget was opened
                     monitors = get_json(["monitors", "-j"])
                     target_mon_name = ""
@@ -111,8 +93,34 @@ def main():
                     mon_x = target_mon.get("x", 0)
                     mon_y = target_mon.get("y", 0)
                     mon_w = target_mon.get("width", 1920)
+                    mon_h = target_mon.get("height", 1080)
                     mon_scale = target_mon.get("scale", 1.0)
                     logical_w = int(mon_w / mon_scale)
+                    logical_h = int(mon_h / mon_scale)
+
+                    curr_size = discord_win.get("size", [480, 680])
+                    curr_w, curr_h = curr_size[0], curr_size[1]
+
+                    is_hypr_fullscreen = (discord_win.get("fullscreen", 0) != 0) or (discord_win.get("fullscreenClient", 0) != 0)
+                    is_size_maximized = (curr_w >= logical_w - 80) and (curr_h >= logical_h - 120)
+
+                    is_maximized = is_hypr_fullscreen or is_size_maximized
+
+                    if is_maximized:
+                        was_maximized = True
+                        time.sleep(0.05)
+                        continue
+
+                    # If window was just un-maximized (or restored via Discord controls), restore default widget size first
+                    if was_maximized:
+                        was_maximized = False
+                        run_hyprctl(["dispatch", "resizewindowpixel", f"exact 480 680,address:{addr}"])
+                        time.sleep(0.05)
+                        clients = get_json(["clients", "-j"])
+                        for c in clients:
+                            if c.get("address") == addr:
+                                discord_win = c
+                                break
 
                     actual_w = discord_win.get("size", [480, 680])[0]
                     margin = 16
