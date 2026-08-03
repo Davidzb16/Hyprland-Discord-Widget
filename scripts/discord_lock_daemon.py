@@ -42,6 +42,7 @@ def main():
     was_maximized = False
     prev_status = ""
     last_opened_time = 0.0
+    unfocused_ticks = 0
 
     while True:
         try:
@@ -70,8 +71,25 @@ def main():
                 if status != "discord" and is_visible:
                     ensure_unpinned_and_hide(addr)
                     was_maximized = False
+                    unfocused_ticks = 0
 
                 elif status == "discord" and is_visible:
+                    # Check for focus loss to auto-hide
+                    active_win = get_json(["activewindow", "-j"])
+                    active_addr = active_win.get("address", "")
+                    
+                    if active_addr != addr:
+                        unfocused_ticks += 1
+                        if unfocused_ticks >= 2:
+                            with open(widget_file, "w") as f:
+                                f.write("")
+                            ensure_unpinned_and_hide(addr)
+                            was_maximized = False
+                            unfocused_ticks = 0
+                            continue
+                    else:
+                        unfocused_ticks = 0
+                        
                     # Anchor Discord strictly to the monitor where the widget was opened
                     monitors = get_json(["monitors", "-j"])
                     target_mon_name = ""
