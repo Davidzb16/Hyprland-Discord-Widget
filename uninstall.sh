@@ -9,7 +9,7 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 RESET='\033[0m'
 
-echo -e "${CYAN} Desinstalando Hyprland Discord Widget...${RESET}"
+echo -e "${CYAN} Uninstalling Hyprland Discord Widget...${RESET}"
 
 HYPR_SCRIPTS="$HOME/.config/hypr/scripts"
 QUICKSHELL_DIR="$HYPR_SCRIPTS/quickshell/discord"
@@ -18,19 +18,19 @@ SERVICE_FILE="$SYSTEMD_USER/discord-lock.service"
 
 # 1. Detener y deshabilitar el servicio systemd
 if systemctl --user is-active --quiet discord-lock.service 2>/dev/null || systemctl --user is-enabled --quiet discord-lock.service 2>/dev/null; then
-    echo -e "${BLUE} Deteniendo y deshabilitando el servicio discord-lock.service...${RESET}"
+    echo -e "${BLUE} Stopping and disabling discord-lock.service...${RESET}"
     systemctl --user stop discord-lock.service 2>/dev/null || true
     systemctl --user disable discord-lock.service 2>/dev/null || true
 fi
 
 if [ -f "$SERVICE_FILE" ]; then
-    echo -e "${BLUE} Eliminando archivo de servicio systemd...${RESET}"
+    echo -e "${BLUE} Removing systemd service file...${RESET}"
     rm -f "$SERVICE_FILE"
     systemctl --user daemon-reload
 fi
 
 # 2. Eliminar archivos instalados del widget
-echo -e "${BLUE} Eliminando archivos instalados en ~/.config/hypr/...${RESET}"
+echo -e "${BLUE} Removing installed files from ~/.config/hypr/...${RESET}"
 
 [ -f "$HYPR_SCRIPTS/position_discord_widget.py" ] && rm -f "$HYPR_SCRIPTS/position_discord_widget.py"
 [ -f "$HYPR_SCRIPTS/discord_lock_daemon.py" ] && rm -f "$HYPR_SCRIPTS/discord_lock_daemon.py"
@@ -40,7 +40,7 @@ echo -e "${BLUE} Eliminando archivos instalados en ~/.config/hypr/...${RESET}"
 # 3. Remover icono de Discord de TopBar.qml si existe
 TOPBAR_QML="$HOME/.config/hypr/scripts/quickshell/TopBar.qml"
 if [ -f "$TOPBAR_QML" ]; then
-    echo -e "${BLUE} Eliminando el icono de Discord de la barra superior ($TOPBAR_QML)...${RESET}"
+    echo -e "${BLUE} Removing Discord icon from top bar ($TOPBAR_QML)...${RESET}"
     python3 -c "
 import os
 
@@ -90,7 +90,7 @@ try:
         with open(topbar_file, 'w', encoding='utf-8') as f:
             f.write(content)
 except Exception as e:
-    print(f'Error al modificar TopBar.qml: {e}')
+    print(f'Error modifying TopBar.qml: {e}')
 " 2>/dev/null || true
 fi
 
@@ -99,7 +99,7 @@ RULES_CONF="$HOME/.config/hypr/config/rules.conf"
 [ ! -f "$RULES_CONF" ] && RULES_CONF="$HOME/.config/hypr/hyprland.conf"
 
 if [ -f "$RULES_CONF" ] && grep -q "discord_widget" "$RULES_CONF"; then
-    echo -e "${BLUE} Removiendo reglas de ventana en $RULES_CONF...${RESET}"
+    echo -e "${BLUE} Removing window rules from $RULES_CONF...${RESET}"
     python3 -c "
 import re
 
@@ -122,13 +122,13 @@ fi
 
 # 5. Reiniciar quickshell si está corriendo para reflejar cambios en la barra
 if pgrep -f "quickshell.*Shell.qml" >/dev/null; then
-    echo -e "${BLUE} Reiniciando Quickshell para aplicar los cambios en la barra...${RESET}"
+    echo -e "${BLUE} Restarting Quickshell to apply top bar changes...${RESET}"
     pkill -f "quickshell.*Shell.qml" || true
     sleep 0.5
     quickshell -p "$HOME/.config/hypr/scripts/quickshell/Shell.qml" >/dev/null 2>&1 &
     disown
 fi
 
-echo -e "\n${GREEN} ¡Desinstalación completada con éxito!${RESET}\n"
+echo -e "\n${GREEN} Uninstallation completed successfully!${RESET}\n"
 
 

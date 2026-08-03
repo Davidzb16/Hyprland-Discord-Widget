@@ -15,7 +15,6 @@ curl -fsSL https://raw.githubusercontent.com/Davidzb16/Hyprland-Discord-Widget/m
 ```
 
 > **Note**: If the widget icon does not appear in the top bar after running the command, restart **Quickshell** and try again.  
-> *(**Nota**: En caso de que el icono del widget no aparezca en la barra superior después de correr el comando, se debe reiniciar **Quickshell** y volverlo a intentar.)*
 
 ---
 

@@ -8,7 +8,7 @@ CYAN='\033[0;36m'
 YELLOW='\033[1;33m'
 RESET='\033[0m'
 
-echo -e "${CYAN} Instalando Hyprland Discord Widget...${RESET}"
+echo -e "${CYAN} Installing Hyprland Discord Widget...${RESET}"
 
 HYPR_SCRIPTS="$HOME/.config/hypr/scripts"
 QUICKSHELL_DIR="$HYPR_SCRIPTS/quickshell/discord"
@@ -21,12 +21,12 @@ trap 'rm -rf "$TMP_DIR"' EXIT
 if [ -d ".git" ] && [ -f "scripts/position_discord_widget.py" ]; then
     SRC_DIR="."
 else
-    echo -e "${BLUE} Descargando repositorio desde GitHub...${RESET}"
+    echo -e "${BLUE} Downloading repository from GitHub...${RESET}"
     git clone --depth 1 https://github.com/Davidzb16/Hyprland-Discord-Widget.git "$TMP_DIR/repo"
     SRC_DIR="$TMP_DIR/repo"
 fi
 
-echo -e "${BLUE} Copiando archivos a ~/.config/hypr/...${RESET}"
+echo -e "${BLUE} Copying files to ~/.config/hypr/...${RESET}"
 mkdir -p "$HYPR_SCRIPTS" "$QUICKSHELL_DIR" "$SYSTEMD_USER"
 
 cp "$SRC_DIR/scripts/position_discord_widget.py" "$HYPR_SCRIPTS/"
@@ -80,7 +80,7 @@ fi
 # Inject Discord Icon Pill into TopBar.qml inside sysLayout if present
 TOPBAR_QML="$HOME/.config/hypr/scripts/quickshell/TopBar.qml"
 if [ -f "$TOPBAR_QML" ]; then
-    echo -e "${BLUE} Agregando icono de Discord a la barra superior ($TOPBAR_QML)...${RESET}"
+    echo -e "${BLUE} Adding Discord icon to the top bar ($TOPBAR_QML)...${RESET}"
     python3 -c "
 import os
 
@@ -154,11 +154,11 @@ try:
             with open(topbar_file, 'w', encoding='utf-8') as f:
                 f.write(new_content)
 except Exception as e:
-    print(f'Error al modificar TopBar.qml: {e}')
+    print(f'Error modifying TopBar.qml: {e}')
 " 2>/dev/null || true
 fi
 
-echo -e "${BLUE} Configurando el servicio de bloqueo systemd...${RESET}"
+echo -e "${BLUE} Configuring systemd lock service...${RESET}"
 systemctl --user daemon-reload
 systemctl --user enable --now discord-lock.service
 
@@ -168,7 +168,7 @@ RULES_CONF="$HOME/.config/hypr/config/rules.conf"
 
 if [ -f "$RULES_CONF" ]; then
     if ! grep -q "discord_widget" "$RULES_CONF"; then
-        echo -e "${BLUE} Añadiendo regla de ventana a $RULES_CONF...${RESET}"
+        echo -e "${BLUE} Adding window rule to $RULES_CONF...${RESET}"
         cat << 'EOF' >> "$RULES_CONF"
 
 # ───────── DISCORD WIDGET ─────────
@@ -187,15 +187,15 @@ fi
 
 # Restart quickshell if running to apply top bar changes
 if pgrep -f "quickshell.*Shell.qml" >/dev/null; then
-    echo -e "${BLUE} Reiniciando Quickshell para aplicar los cambios en la barra...${RESET}"
+    echo -e "${BLUE} Restarting Quickshell to apply top bar changes...${RESET}"
     pkill -f "quickshell.*Shell.qml" || true
     sleep 0.5
     quickshell -p "$HOME/.config/hypr/scripts/quickshell/Shell.qml" >/dev/null 2>&1 &
     disown
 fi
 
-echo -e "\n${GREEN} ¡Instalación completada con éxito!${RESET}"
-echo -e "${YELLOW} Puedes probar el widget ejecutando:${RESET}"
+echo -e "\n${GREEN} Installation completed successfully!${RESET}"
+echo -e "${YELLOW} You can test the widget by running:${RESET}"
 echo -e "   python3 ~/.config/hypr/scripts/position_discord_widget.py\n"
 
 
