@@ -81,8 +81,8 @@ def main():
     widget_file = os.path.join(run_dir, "current_widget")
     mon_file = os.path.join(run_dir, "discord_monitor")
 
-    # Check if currently visible on active workspace
-    is_visible_current = (win_ws_name != "special:discord_widget") and (not discord_win.get("hidden", False)) and (win_ws_id == curr_ws_id or is_pinned)
+    # Check if currently visible (anywhere outside special:discord_widget)
+    is_visible_current = (win_ws_name != "special:discord_widget") and (not discord_win.get("hidden", False))
 
     if is_visible_current:
         # Hide Discord cleanly
