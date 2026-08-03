@@ -45,6 +45,38 @@ if [ -f "$WIN_REG" ]; then
     sed -i 's|"discord/DiscordPopup.qml"|""|g' "$WIN_REG"
 fi
 
+# Patch Main.qml to safely handle empty component paths (comp: "") without crashing widgetStack
+MAIN_QML="$HOME/.config/hypr/scripts/quickshell/Main.qml"
+if [ -f "$MAIN_QML" ]; then
+    python3 -c "
+main_file = '$MAIN_QML'
+try:
+    with open(main_file, 'r', encoding='utf-8') as f:
+        c = f.read()
+    if 'widgetStack.clear();' not in c:
+        old_target = 'widgetStack.replace(t.comp, props);'
+        if old_target in c:
+            new_target = '''if (t && t.comp && t.comp !== \"\") {
+                if (immediate) {
+                    widgetStack.replace(t.comp, props, StackView.Immediate);
+                } else {
+                    widgetStack.replace(t.comp, props);
+                }
+            } else {
+                widgetStack.clear();
+            }'''
+            c = c.replace('''if (immediate) {
+                widgetStack.replace(t.comp, props, StackView.Immediate);
+            } else {
+                widgetStack.replace(t.comp, props);
+            }''', new_target)
+            with open(main_file, 'w', encoding='utf-8') as f:
+                f.write(c)
+except Exception as e:
+    pass
+" 2>/dev/null || true
+fi
+
 # Inject Discord Icon Pill into TopBar.qml inside sysLayout if present
 TOPBAR_QML="$HOME/.config/hypr/scripts/quickshell/TopBar.qml"
 if [ -f "$TOPBAR_QML" ]; then
