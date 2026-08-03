@@ -27,6 +27,24 @@ def main():
     except:
         return
 
+    monitors_out = run_hyprctl(["monitors", "-j"])
+    try:
+        monitors = json.loads(monitors_out)
+        for m in monitors:
+            mx = int(m.get("x", 0))
+            my = int(m.get("y", 0))
+            mw = int(m.get("width", 1920) / m.get("scale", 1.0))
+            mh = int(m.get("height", 1080) / m.get("scale", 1.0))
+            
+            # Check if cursor is on this monitor
+            if mx <= cur_x <= mx + mw and my <= cur_y <= my + mh:
+                # TopBar usually takes up top 56-60 pixels
+                if cur_y < my + 60:
+                    return # Ignore click on TopBar
+                break
+    except:
+        pass
+
     clients_out = run_hyprctl(["clients", "-j"])
     try:
         clients = json.loads(clients_out)
