@@ -30,6 +30,14 @@ def ensure_unpinned_and_hide(addr):
                     run_hyprctl(["dispatch", "pin", f"address:{addr}"])
                 break
     run_hyprctl(["dispatch", "movetoworkspacesilent", f"special:discord_widget,address:{addr}"])
+    
+    # Force close the special workspace if it accidentally activated (e.g. focus fallback on empty workspace)
+    monitors = get_json(["monitors", "-j"])
+    if isinstance(monitors, list):
+        for m in monitors:
+            if m.get("specialWorkspace", {}).get("name") == "special:discord_widget":
+                run_hyprctl(["dispatch", "togglespecialworkspace", "discord_widget"])
+                break
 
 def main():
     run_dir = os.path.expanduser("~/.local/state/quickshell")
@@ -66,6 +74,15 @@ def main():
                 is_hidden = discord_win.get("hidden", False)
 
                 is_visible = (win_ws_name != "special:discord_widget") and (not is_hidden)
+                
+                # If it's in the special workspace but the workspace is currently toggled on
+                if win_ws_name == "special:discord_widget" and not is_hidden:
+                    monitors = get_json(["monitors", "-j"])
+                    if isinstance(monitors, list):
+                        for m in monitors:
+                            if m.get("specialWorkspace", {}).get("name") == "special:discord_widget":
+                                is_visible = True
+                                break
 
                 # If Quickshell registered a click outside or another widget opened (status != "discord")
                 if status != "discord" and is_visible:

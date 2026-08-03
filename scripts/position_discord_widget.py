@@ -94,6 +94,12 @@ def main():
     # Check if currently visible (anywhere outside special:discord_widget)
     is_visible_current = (win_ws_name != "special:discord_widget") and (not discord_win.get("hidden", False))
 
+    if win_ws_name == "special:discord_widget" and not discord_win.get("hidden", False):
+        for m in monitors:
+            if m.get("specialWorkspace", {}).get("name") == "special:discord_widget":
+                is_visible_current = True
+                break
+
     if is_visible_current:
         # Hide Discord cleanly
         if (discord_win.get("fullscreen", 0) != 0) or (discord_win.get("fullscreenClient", 0) != 0):
