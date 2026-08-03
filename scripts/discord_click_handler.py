@@ -56,8 +56,9 @@ def main():
             at_x, at_y = c.get("at", [0, 0])
             w, h = c.get("size", [0, 0])
             
-            # Check if outside
-            if cur_x < at_x or cur_x > at_x + w or cur_y < at_y or cur_y > at_y + h:
+            # Add a margin to allow grabbing the invisible resize borders (Hyprland extends hitboxes)
+            margin = 15
+            if cur_x < (at_x - margin) or cur_x > (at_x + w + margin) or cur_y < (at_y - margin) or cur_y > (at_y + h + margin):
                 with open(widget_file, "w") as f:
                     f.write("")
             break
