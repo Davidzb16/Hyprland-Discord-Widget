@@ -66,32 +66,12 @@ def main():
 
                 is_visible = (win_ws_name != "special:discord_widget") and (not is_hidden)
 
-                # Track when widget became active
-                if status == "discord" and prev_status != "discord":
-                    last_opened_time = time.time()
-                prev_status = status
-
                 # If Quickshell registered a click outside or another widget opened (status != "discord")
                 if status != "discord" and is_visible:
                     ensure_unpinned_and_hide(addr)
                     was_maximized = False
 
                 elif status == "discord" and is_visible:
-                    # Auto-hide if user clicked outside Discord (focus lost)
-                    if time.time() - last_opened_time > 0.4:
-                        active_win = get_json(["activewindow", "-j"])
-                        active_addr = active_win.get("address", "") if isinstance(active_win, dict) else ""
-                        active_class = active_win.get("class", "").lower() if isinstance(active_win, dict) else ""
-
-                        if active_class not in ["discord", "com.discordapp.discord", "vesktop"] and active_addr.lower() != addr.lower():
-                            with open(widget_file, "w") as f:
-                                f.write("")
-                            ensure_unpinned_and_hide(addr)
-                            was_maximized = False
-                            prev_status = ""
-                            time.sleep(0.05)
-                            continue
-
                     # Anchor Discord strictly to the monitor where the widget was opened
                     monitors = get_json(["monitors", "-j"])
                     target_mon_name = ""

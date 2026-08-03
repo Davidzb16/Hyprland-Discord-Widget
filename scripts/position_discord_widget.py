@@ -105,10 +105,10 @@ def main():
 
         ensure_unpinned_and_hide(addr)
     else:
-        # Close any currently active Quickshell widget first
+        # Open "discord" widget in Quickshell (activates full-screen overlay mask for genuine click-outside dismissal)
         shell_qml = os.path.expanduser("~/.config/hypr/scripts/quickshell/Shell.qml")
         if os.path.exists(shell_qml):
-            subprocess.run(["quickshell", "-p", shell_qml, "ipc", "call", "main", "handleCommand", "close", "", ""], capture_output=True)
+            subprocess.run(["quickshell", "-p", shell_qml, "ipc", "call", "main", "handleCommand", "open", "discord", ""], capture_output=True)
             time.sleep(0.25)
 
         # Lock monitor name for this widget session
