@@ -21,6 +21,16 @@ def get_json(cmd):
     except Exception:
         return {} if "activewindow" in cmd else []
 
+def ensure_unpinned_and_hide(addr):
+    clients = get_json(["clients", "-j"])
+    if isinstance(clients, list):
+        for c in clients:
+            if c.get("address") == addr:
+                if c.get("pinned", False):
+                    run_hyprctl(["dispatch", "pin", f"address:{addr}"])
+                break
+    run_hyprctl(["dispatch", "movetoworkspacesilent", f"special:discord_widget,address:{addr}"])
+
 def main():
     run_dir = os.path.expanduser("~/.local/state/quickshell")
     if "XDG_RUNTIME_DIR" in os.environ:
@@ -50,16 +60,13 @@ def main():
             if discord_win:
                 addr = discord_win.get("address")
                 win_ws_name = discord_win.get("workspace", {}).get("name", "")
-                is_pinned = discord_win.get("pinned", False)
                 is_hidden = discord_win.get("hidden", False)
 
                 is_visible = (win_ws_name != "special:discord_widget") and (not is_hidden)
 
                 # If Quickshell registered a click outside or another widget opened (status != "discord")
                 if status != "discord" and is_visible:
-                    if is_pinned:
-                        run_hyprctl(["dispatch", "pin", f"address:{addr}"])
-                    run_hyprctl(["dispatch", "movetoworkspacesilent", f"special:discord_widget,address:{addr}"])
+                    ensure_unpinned_and_hide(addr)
                     was_maximized = False
 
                 elif status == "discord" and is_visible:

@@ -21,6 +21,16 @@ def get_json(cmd):
     except Exception:
         return []
 
+def ensure_unpinned_and_hide(addr):
+    clients = get_json(["clients", "-j"])
+    if isinstance(clients, list):
+        for c in clients:
+            if c.get("address") == addr:
+                if c.get("pinned", False):
+                    run_hyprctl(["dispatch", "pin", f"address:{addr}"])
+                break
+    run_hyprctl(["dispatch", "movetoworkspacesilent", f"special:discord_widget,address:{addr}"])
+
 def main():
     clients = get_json(["clients", "-j"])
     monitors = get_json(["monitors", "-j"])
@@ -90,13 +100,10 @@ def main():
             run_hyprctl(["dispatch", "focuswindow", f"address:{addr}"])
             run_hyprctl(["dispatch", "fullscreen", "0"])
 
-        if is_pinned:
-            run_hyprctl(["dispatch", "pin", f"address:{addr}"])
-        
         with open(widget_file, "w") as f:
             f.write("")
 
-        run_hyprctl(["dispatch", "movetoworkspacesilent", f"special:discord_widget,address:{addr}"])
+        ensure_unpinned_and_hide(addr)
     else:
         # Close any currently active Quickshell widget first
         shell_qml = os.path.expanduser("~/.config/hypr/scripts/quickshell/Shell.qml")
