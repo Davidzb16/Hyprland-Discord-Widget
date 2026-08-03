@@ -42,7 +42,7 @@ def main():
     was_maximized = False
     prev_status = ""
     last_opened_time = 0.0
-    unfocused_ticks = 0
+    is_bind_active = False
 
     while True:
         try:
@@ -71,24 +71,11 @@ def main():
                 if status != "discord" and is_visible:
                     ensure_unpinned_and_hide(addr)
                     was_maximized = False
-                    unfocused_ticks = 0
 
                 elif status == "discord" and is_visible:
-                    # Check for focus loss to auto-hide
-                    active_win = get_json(["activewindow", "-j"])
-                    active_addr = active_win.get("address", "")
-                    
-                    if active_addr != addr:
-                        unfocused_ticks += 1
-                        if unfocused_ticks >= 2:
-                            with open(widget_file, "w") as f:
-                                f.write("")
-                            ensure_unpinned_and_hide(addr)
-                            was_maximized = False
-                            unfocused_ticks = 0
-                            continue
-                    else:
-                        unfocused_ticks = 0
+                    if not is_bind_active:
+                        run_hyprctl(["keyword", "bindn", " , mouse:272, exec, ~/.config/hypr/scripts/discord_click_handler.py"])
+                        is_bind_active = True
                         
                     # Anchor Discord strictly to the monitor where the widget was opened
                     monitors = get_json(["monitors", "-j"])
@@ -160,6 +147,10 @@ def main():
                     # Snap back if user dragged window or pointer moved across screens
                     if abs(curr_at[0] - target_x) > 2 or abs(curr_at[1] - target_y) > 2:
                         run_hyprctl(["dispatch", "movewindowpixel", f"exact {target_x} {target_y},address:{addr}"])
+
+            if (not is_visible or status != "discord") and is_bind_active:
+                run_hyprctl(["keyword", "unbindn", " , mouse:272"])
+                is_bind_active = False
 
             time.sleep(0.05)
         except Exception:
