@@ -103,13 +103,19 @@ def main():
         with open(widget_file, "w") as f:
             f.write("")
 
-        ensure_unpinned_and_hide(addr)
+        # Let discord_lock_daemon handle the unpinning and hiding to avoid race conditions
+        # ensure_unpinned_and_hide(addr)
     else:
         # Close any currently active Quickshell widget first
         shell_qml = os.path.expanduser("~/.config/hypr/scripts/quickshell/Shell.qml")
         if os.path.exists(shell_qml):
             subprocess.run(["quickshell", "-p", shell_qml, "ipc", "call", "main", "handleCommand", "close", "", ""], capture_output=True)
-            time.sleep(0.25)
+            for _ in range(15):
+                if os.path.exists(widget_file):
+                    with open(widget_file, "r") as f:
+                        if f.read().strip() == "hidden":
+                            break
+                time.sleep(0.05)
 
         # Lock monitor name for this widget session
         with open(mon_file, "w") as f:
