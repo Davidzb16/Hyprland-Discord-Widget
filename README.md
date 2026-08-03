@@ -4,6 +4,8 @@ An interactive **Discord** widget designed for **Hyprland** and **Quickshell**. 
 
 ![Widget Preview](preview.png)
 
+> **⚠️ Disclaimer**: This widget is currently in its early stages of development. Bugs may occur, and features are subject to change. Any feedback, bug reports, or suggestions are highly appreciated—feel free to open an issue in the [Issues section](https://github.com/Davidzb16/Hyprland-Discord-Widget/issues) of this repository!
+
 ---
 
 ## ⚡ Quick Installation (One-Line Command)
