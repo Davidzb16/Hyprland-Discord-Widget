@@ -106,7 +106,8 @@ def main():
                     mon_y = target_mon.get("y", 0)
                     mon_w = target_mon.get("width", 1920)
                     mon_h = target_mon.get("height", 1080)
-                    mon_scale = target_mon.get("scale", 1.0)
+                    mon_scale = float(target_mon.get("scale", 1.0))
+                    
                     logical_w = int(mon_w / mon_scale)
                     logical_h = int(mon_h / mon_scale)
 
@@ -136,11 +137,12 @@ def main():
                                     break
 
                     actual_w = discord_win.get("size", [480, 680])[0]
-                    margin = 16
-                    target_x = int(mon_x + logical_w - actual_w - margin)
+                    # Target X locks the window 10 logical pixels away from the right edge
+                    target_x = int(mon_x + logical_w - actual_w - 10)
                     if target_x < mon_x:
                         target_x = mon_x
-                    target_y = int(mon_y + round(60 * mon_scale))
+                    # Target Y locks the window 60 logical pixels from the top edge
+                    target_y = int(mon_y + 60)
 
                     curr_at = discord_win.get("at", [0, 0])
 
